@@ -1,0 +1,121 @@
+Логические задачи на собеседовании
+Пост из группы Random
+994337 участников
+Вам предстоит разобрать 5 логических задач плюс 4 задачки по Java от меня. Задачи, которые встречались на собеседованиях и решения к ним есть в интернете. Приведу топ-список из тех, с которыми я столкнулся на собеседованиях.
+
+
+
+Четыре человека в шляпах
+
+Задача про мост и фонарик
+
+Из 9 монет одна фальшивая: она легче. Как найти ее за два взвешивания на чашах весов?
+
+Почти то же, что и прошлая задача, только весы могут быть любыми. Задача "5 банок с таблетками".
+
+"Бесконечный поезд"
+
+
+На засыпку вопросы которые задавали на собеседованиях:
+Напишите несколько способов реализация синглтона(одиночка) в java.
+
+Что произойдет в этом коде?
+
+
+class MyExc1 extends Exception{}
+class MyExc2 extends Exception{}
+class MyExc3 extends Exception{}
+
+public class Test {
+    public static void main(String[] args) throws Exception {
+        try {
+            System.out.print(1);
+            p();
+        }catch (MyExc2 e){
+        }
+        finally {
+            throw new MyExc3();
+            System.out.print(2);
+        }
+    }
+    public static void p() throws Exception {
+        try {
+            throw new MyExc1();
+             } catch (MyExc1 myExc1) {
+            throw new MyExc2();
+        }finally {
+            System.out.println(3);
+        }
+    }
+}
+Задачка от меня, потому что не помню, какой пример там был
+
+public class Test {
+    public static void main(String[] args)  {
+        String s = "Hello";
+        String s1 = "Hello";
+        String s2 = new String("Hello");
+
+        System.out.println(s == s1);
+        System.out.println(s1 == s2);
+
+        Integer i = 111;
+        Integer i1 = 111;
+        Integer i2 = new Integer(111);
+        Integer i3 = new Integer(111);
+
+        Integer i4 = -129;
+        Integer i5 = -129;
+        Integer i6 = new Integer(-129);
+
+        System.out.println(i == i1);
+        System.out.println(i1 == i2);
+        System.out.println(i2 == i3);
+
+        System.out.println(i4 == i5);
+        System.out.println(i5 == i6);
+
+        System.out.println(i6 == -129);
+    }
+}
+Какой будет результат выполнения программы? И какой результат получим, если раскоментировать последние две строчки?
+
+class Test{
+    private int id;
+    private Integer id2;
+
+    public Test(int id, Integer id2) {
+        System.out.println("Создаем екзепляр Test");
+        this.id = id;
+        this.id2 = id2;
+    }
+
+    public Integer doIt(){
+        return id + id2;
+    }
+}
+class Test1{
+    private Test test;
+    private static int i;
+
+    public Test1() {
+        System.out.println("Создаем екзепляр Test1");
+        this.test = new Test(i, 10);
+    }
+    public Test getTest() {
+        return test;
+    }
+}
+
+class Main {
+    public static void main(String[] args)  {
+        Test1 test1 = new Test1();
+        System.out.println(test1.getTest().doIt());
+       // Test test = new Test(null, 1);
+       // test.doIt();
+    }
+}
+
+
+
+P.S.: Ответы на задачи по логике можно все найти в интернете. 

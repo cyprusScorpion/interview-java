@@ -1,0 +1,318 @@
+ 
+Ответы на вопросы к собеседованию Level31
+ Блог им. DefNeo
+ java, level31
+1 Может ли объект File соответствовать файлу, которого еще нет?
+Да, если передать в конструктор значение директории.
+
+String dirPath = "/";
+File f = new File(dirPath);
+File[] files = f.listFiles();
+
+Так делают
+например для того, чтобы получить массив файлов.
+
+public class MyClass {
+    public static void main(String[] args) {
+        boolean isObject = false;
+
+        
+        File file = new File("/");
+        if (file instanceof Object){
+            isObject = true;
+        }
+        boolean isFile = file.isFile(); // Tests whether the file denoted by this abstract pathname is a normal file.
+Это из документации
+        System.out.println(isObject + " "+ isFile);
+
+    }
+}
+
+Вывод: true false
+File наследуется от object. Ответ: да
+Жду комментариев.
+2 Как преобразовать объект File к типу Path?
+Метод toPath();
+toPath(); //Returns a java.nio.file.Path object constructed from the this abstract path.
+
+3 Зачем нужен класс Files?
+Взяли за основу класс File, добавили в него немного нового, переименовывали методы, а в конце еще и разделили на два. Так что теперь есть два новых класса – Path и Files. Path – это, фактически новый аналог класса File, а Files – это утилитный класс (по аналогии с классами Arrays & Collections), в него вынесли все статические методы класса File. Так «правильнее» с точки зрения ООП.
+Немного из документов:
+public final class Files
+extends Object
+This class consists exclusively of static methods that operate on files, directories, or other types of files.
+In most cases, the methods defined here will delegate to the associated file system provider to perform the file operations.
+
+4 Какие классы для архивации вы знаете?
+Неплохая статья на эту тему и выдержка из нее: crypto.pp.ua/2010/06/arxivaciya-v-java/
+Для работы с архивами в спецификации Java существуют два пакета – java.util.zip и java.util.jar соответственно для архивов zip и jar. Различие форматов jar и zip заключается только в расширении архива zip. Пакет java.util.jar аналогичен пакету java.util.zip, за исключением реализации конструкторов и метода voidputNextEntry(ZipEntry e) класса JarOutputStream. Ниже будет рассмотрен только пакетjava.util.jar. Чтобы переделать все примеры на использование zip-архива, достаточно всюду 
+в коде заме¬нить Jar на Zip
+5 Как добавить директорию в архив?
+Для себя я понял этот вопрос, как добавление пустой директории в готовый архив. Никаких рабочих примеров я не нашел. Вот код: (Он наглядно показывает, что можно в архив положить любой файл, а вот с пустой директорией… я не знаю как ответить, постить на StackOverFlow не стал, за такой вопрос заминусят точно) Если у кого есть предложения, то напишите.
+
+public class Main {
+    public static void main(String[] args) {
+        String[] myFiles = {"D:\\forJava\\MyArtifactName\\packForTest\\res2.txt",
+                "D:\\forJava\\MyArtifactName\\packForTest\\res.txt",
+                "D:\\forJava\\MyArtifactName\\packForTest\\res4.txt",
+                "D:\\forJava\\MyArtifactName\\packForTest\\testDir\\"
+                };
+        String zipFile = "D:\\forJava\\MyArtifactName\\packForTest\\res.zip";
+        ZipUtility zipUtil = new ZipUtility();
+        try {
+            zipUtil.zip(myFiles, zipFile);
+
+        } catch (Exception ex) {
+            // some errors occurred
+            ex.printStackTrace();
+        }
+    }
+}
+
+Вопрос о последней testDir, ее то как раз в получившийся архив JVM не кладет, со всеми остальными txt – файлами норм получается.
+ZipUtility.java:
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+public class ZipUtility {
+
+    private static final int BUFFER_SIZE = 4096;
+
+    public void zip(List<File> listFiles, String destZipFile) throws IOException {
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(destZipFile));
+        for (File file : listFiles) {
+            if (file.isDirectory()) {
+                zipDirectory(file, file.getName(), zos);
+            } else {
+                zipFile(file, zos);
+            }
+        }
+        zos.flush();
+        zos.close();
+    }
+
+    public void zip(String[] files, String destZipFile) throws IOException {
+        List<File> listFiles = new ArrayList<File>();
+        for (int i = 0; i < files.length; i++) {
+            listFiles.add(new File(files[i]));
+        }
+        zip(listFiles, destZipFile);
+    }
+
+    private void zipDirectory(File folder, String parentFolder, ZipOutputStream zos) throws  IOException {
+        for (File file : folder.listFiles()) {
+            if (file.isDirectory()) {
+                zipDirectory(file, parentFolder + "/" + file.getName(), zos);
+                continue;
+            }
+            zos.putNextEntry(new ZipEntry(parentFolder + "/" + file.getName()));
+            BufferedInputStream bis = new BufferedInputStream(
+                    new FileInputStream(file));
+            long bytesRead = 0;
+            byte[] bytesIn = new byte[BUFFER_SIZE];
+            int read = 0;
+            while ((read = bis.read(bytesIn)) != -1) {
+                zos.write(bytesIn, 0, read);
+                bytesRead += read;
+            }
+            zos.closeEntry();
+        }
+    }
+
+    private void zipFile(File file, ZipOutputStream zos)
+            throws  IOException {
+        zos.putNextEntry(new ZipEntry(file.getName()));
+        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(
+                file));
+        long bytesRead = 0;
+        byte[] bytesIn = new byte[BUFFER_SIZE];
+        int read = 0;
+        while ((read = bis.read(bytesIn)) != -1) {
+            zos.write(bytesIn, 0, read);
+            bytesRead += read;
+        }
+        zos.closeEntry();
+    }
+}
+
+Код отсюда:
+www.codejava.net/java-se/file-io/zip-directories
+
+6 Зачем нужны Properties?
+Properties – это файл свойств. Структура его: ключ – значение. Для работы с такими файлами в Java есть класс Properties, он унаследован от HashTable<Object, Object>
+Есть статья про манипуляции с ним
+www.mkyong.com/java/java-properties-file-examples/
+
+7 В каком виде хранятся данные в файле .properties?
+Ключ – значение.
+8 Можно ли изменять данные в объекте Properties после загрузки их из файла?
+Если он унаследован от HashMap, тогда можно, только потом нужно будет изменения в этот файл отписать. Для этого есть метод setProperty.
+Вот код:
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+/**
+ * Created by Роман on 12.09.2016.
+ */
+public class LoadAndSetProperties {
+
+    public static void main(String[] args) {
+
+        Properties prop = new Properties();
+        InputStream input = null;
+        try {
+
+            input = new FileInputStream("D:\\forJava\\MyArtifactName\\packForTest\\config.properties");
+
+            // load a properties file
+            prop.load(input);
+
+            // get the property value and print it out
+
+
+            prop.setProperty("database", "ddfdfdfdfdf");
+            System.out.print(prop.getProperty("database"));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+}
+
+Вывод: ddfdfdfdfdf
+9 Зачем нужен класс FileReader?
+Java Docs:
+public class FileReader
+
+extends InputStreamReader
+
+Convenience class for reading character files. The constructors of this class assume that the default character encoding and the default byte-buffer size are appropriate. To specify these values yourself, construct an InputStreamReader on a FileInputStream.
+FileReader is meant for reading streams of characters. 
+Класс для чтения символов файлов. Конструкторы этого класса предполагают, что кодировка символов дефолтная и дефолтный размер буфера являются подходящими. Чтобы задать эти значения самостоятельно, следует построить InputStreamReader над FileInputStream. FileReader предназначен для считывания потоков символов. 
+10 Зачем нужен класс FileWriter?
+public class FileWriter
+extends OutputStreamWriter
+
+Convenience class for writing character files. The constructors of this class assume that the default character encoding and the default byte-buffer size are acceptable. To specify these values yourself, construct an OutputStreamWriter on a FileOutputStream.
+Whether or not a file is available or may be created depends upon the underlying platform. Some platforms, in particular, allow a file to be opened for writing by only one FileWriter (or other file-writing object) at a time. In such situations the constructors in this class will fail if the file involved is already open.
+FileWriter is meant for writing streams of characters. 
+Класс для записи символов файлов. Конструкторы этого класса предполагают, что кодировка символов дефолтная и дефолтный размер буфера являются приемлемым. Чтобы задать эти значения самостоятельно, следует построить OutputStreamWriter над FileOutputStream. Является ли файл доступен для записи, зависит от используемой платформы. Некоторые платформы разрешают держать файл для записи только одним FileWriter (или другого объекта записи файла), в одно время. FileWriter предназначен для записи потоков символов. Для написания потоков необработанных байтов, используйте FileOutputStream.
+Эти классы (FileReader и FileWriter) специально ориентированы для работы с текстом и строками.
+—
+4
+13 комментариев 
+ Afli
+Afli 13 октября 2016, 11:30 +1
+1 Может ли объект File соответствовать файлу, которого еще нет?
+Совсем не смог понять суть приведенного вами ответа. Согласно документации, я это все вижу так:
+1. В конструктор мы передаем имя файла.
+2. Существование файла можем проверить с помощью метода
+exists()
+или попытаться создать файл методом
+createNewFile()
+ DefNeo
+DefNeo 18 ноября 2016, 17:21 0 ↑
+Более интересно: зачем вообще может понадобиться искать ссылку на файл которого нет?
+ Afli
+Afli 21 ноября 2016, 09:46 0 ↑
+А при чем тут поиск?)
+ bazizdeg
+bazizdeg 17 октября 2016, 18:45 +1 Комментарий отредактирован 2016-10-17 18:47:34 пользователем bazizdeg
+5 Как добавить директорию в архив
+Нашел такое: stackoverflow.com/questions/740375/directories-in-a-zip-file-when-using-java-util-zip-zipoutputstream
+ DefNeo
+DefNeo 18 ноября 2016, 17:24 0 ↑
+Скорее всего речь идет о директории с файлом))
+ Sanakan
+Sanakan 5 декабря 2016, 13:11 0 ↑
+Если нужна пустая директория можно просто так:
+ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(«C:/1/1.zip»));
+zos.putNextEntry(new ZipEntry(«1/»));
+Будет архив с пустой папкой «1».
+А если директория с файлом:
+zos.putNextEntry(new ZipEntry(«1/1.txt»));
+Files.copy(Paths.get(«C:/1/1.txt»), zos);
+ Prod
+Prod 23 октября 2016, 14:19 0 Комментарий отредактирован 2016-10-23 14:23:30 пользователем Prod
+По поводу добавления директории в архив. Если речь о том, что есть директория с файлами, то мое решение такое: получить список файлов, вычитываем все данные из каждого файла и заносим в Мар<String(fileName), byte[]>. Дальше все по аналогии с добавлением одного файла в архив. C вложенными директориями, думаю, всем понятно, что делать. Тут главное в конструкторе каждого ZipEntry для записи в архив правильное имя файла сделать.
+ lichMax
+lichMax 27 июня 2017, 17:26 0
+Ответ на первый вопрос — вообще какой-то бред. Можно же тупо самому попробовать в коде. Создать объект в файл с путём к несуществующему файлу и посмотреть что будет. А собственно, ничего не будет, никаких ошибок, ничего. Вообще, не зря же существует метод exists(). Если бы нельзя было создать объект File для несуществующего файла, то этого метода бы и не было.
+ duhbox
+duhbox 6 августа 2017, 12:44 0
+№1 http://www.intuit.ru/studies/courses/16/16/lecture/27133?page=4
+Объект класса File является абстрактным представлением файла и пути к нему. Он устанавливает только соответствие с ним, при этом для создания объекта неважно, существует ли такой файл на диске. После создания можно выполнить проверку, вызвав метод exists, который возвращает значение true, если файл существует. Создание или удаление объекта класса File никоим образом не отображается на реальных файлах. Для работы с содержимым файла можно получить экземпляры File I/O Stream.
+Объект File может указывать на каталог (узнать это можно путем вызова метода isDirectory ). Метод list возвращает список имен (массив String ) содержащихся в нем файлов (если объект File не указывает на каталог – будет возвращен null ).
+ duhbox
+duhbox 6 августа 2017, 14:02 0
+№5 http://www.javenue.info/post/35
+Для упаковки директории необходимо выбрать способ обхода файлов директории со всеми ее поддиректориями. Например, с помощью интерфейса FileVisitor, воспользоваться очередью или рекурсией.
+import java.io.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+public class ZipUtil {
+    public static void main(String[] args) throws Exception {
+        ZipOutputStream out = new ZipOutputStream(new FileOutputStream("archive.zip"));
+
+        File file = new File("folder");
+
+        doZip(file, out);
+
+        out.close();
+    }
+
+    private static void doZip(File dir, ZipOutputStream out) throws IOException {
+        for (File f : dir.listFiles()) {
+            if (f.isDirectory())
+                doZip(f, out);
+            else {
+                out.putNextEntry(new ZipEntry(f.getPath()));
+                write(new FileInputStream(f), out);
+            }
+        }
+    }
+
+    private static void write(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = in.read(buffer)) >= 0)
+            out.write(buffer, 0, len);
+        in.close();
+    }
+}
+
+при создании ZipEntry используется относительный путь, а не просто имя файла. Это сделано для того, чтобы при архивации сохранились все дерево директорий. В случае использования f.getName() в архиве просто будет плоский список файлов без информации о директориях.
+ DedZahar
+DedZahar 4 ноября 2017, 02:44 0 ↑
+Ваш код не будет работать для пустой директории. А задача как раз заархивировать пустую директорию. В этом вся соль.
+ Marina86
+Marina86 3 ноября 2017, 20:23 0
+Дополнение к пункту 8 — «Можно ли изменять данные в объекте Properties после загрузки их из файла?»
+Чтобы сохранить добавленное/измененное свойство в файле(а в этом как раз и весь смысл ибо сейчас свойство есть лишь в runtime) добавьте 
+prop.store(new FileOutputStream(«D:\\forJava\\MyArtifactName\\packForTest\\config.properties»), «comments»);
+ maksimys87
+maksimys87 21 января 2018, 18:38 0
+5 Как добавить директорию в архив?
+Вопрос о последней testDir, ее то как раз в получившийся архив JVM не кладет, со всеми остальными txt – файлами норм получается.
+Все просто! Метод listFiles() возвращает массив файлов. Если каталог пуст, то и массив будет нулевым. Поэтому метод zipDirectory просто не отрабатывает. Вот и весь сказ.

@@ -1,0 +1,49 @@
+Всё намного проще, происходит подмена return блока
+
+Чтобы это увидеть на деле, скомпилируем ваш код в bytecode и откроем его например через Intellij IDEA и увидим следующую картину:
+
+public class Main {
+    public Main() {
+    }
+
+    private static int f() {
+        try {
+            boolean var0 = true;
+            return 2;
+        } finally {
+            ;
+        }
+    }
+
+    public static final void main(String[] var0) {
+        System.out.println(f());
+    }
+}
+Можем заметить, что при компиляции блок return из try был заменён на return из finally
+
+UPD:
+
+Давайте сделаем ситуацию интереснее и скомпилируем такую функцию
+
+private static int f (){
+    try {
+        System.exit(0);
+        return 1;
+    }
+    finally {
+        System.out.println("smth");
+        return 2;
+    }
+}
+Её bytecode будет таким:
+
+private static int f() {
+    try {
+        System.exit(0);
+        boolean var0 = true;
+    } finally {
+        System.out.println("smth");
+        return 2;
+    }
+}
+Тут мы видим, что return просто удалился из блока try, а System.exit(0) естественно выбросит из приложения быстрее, чем сработает блок finally. 
